@@ -2,6 +2,7 @@ import tokenize
 import io
 from token import tok_name
 
+# 1. Define a class to generate N-grams
 
 class NGramGenerator:
     def __init__(self, code):
@@ -14,6 +15,7 @@ class NGramGenerator:
         self.tokens = self.tokenize_code(code)
         self.filtered_tokens = self.filter_tokens({'NAME', 'NUMBER', 'STRING', 'OP'})
 
+# 2. Define a function to tokenize code
     def tokenize_code(self, code):
         tokens = []
         code_bytes = io.BytesIO(code.encode('utf-8'))
@@ -28,6 +30,7 @@ class NGramGenerator:
             print(f"Tokenization error: {e}")
         return tokens
 
+# 3. Define a function to filter tokens by type
     def filter_tokens(self, desired_types):
         """
         Filters tokens based on desired types.
@@ -40,6 +43,7 @@ class NGramGenerator:
         """
         return [token for token in self.tokens if token[0] in desired_types]
 
+# 4. Define a function to generate n-grams using NLTK
     def generate_ngrams_nltk(self, n=2):
         """
         Generates N-grams using NLTK.
@@ -54,6 +58,7 @@ class NGramGenerator:
         token_strings = [token[1] for token in self.filtered_tokens]
         return list(ngrams(token_strings, n))
 
+# 5. Define a function to generate n-grams manually
     def generate_ngrams_manual(self, n=2):
         """
         Generates N-grams manually without external libraries.
@@ -71,6 +76,7 @@ class NGramGenerator:
             ngrams_list.append(ngram)
         return ngrams_list
 
+# 6. Define a function to display N
     def display_ngrams(self, ngrams, title="N-grams"):
         """
         Displays the N-grams with a title.
@@ -83,6 +89,7 @@ class NGramGenerator:
         for ng in ngrams:
             print(ng)
 
+# 7. Define a main function to test the NGramGenerator
 
 def main():
     python_code = """ CE320 is a wonderful module. Riccardo is a wonderful teacher."""
