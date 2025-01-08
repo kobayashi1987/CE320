@@ -5,7 +5,7 @@ import io
 from token import tok_name
 from nltk import ngrams
 
-print ("ce320")
+
 # 2. Define a function to tokenize code
 def tokenize_code(code):
     tokens = []
@@ -20,6 +20,7 @@ def tokenize_code(code):
     except tokenize.TokenError as e:
         print(f"Tokenization error: {e}")
     return tokens
+
 
 # 3. Define a function to filter tokens by type
 def filter_tokens(tokens, desired_types):
