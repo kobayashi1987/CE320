@@ -4,6 +4,9 @@
 ```bash
 pip install tokenize
 pip install matplotlib
+pip install scikit-learn
+pip install seaborn
+pip install scipy
 ```
 
 Step 1:
@@ -42,10 +45,12 @@ Step 6:
 // These matrices will represent the frequency of each N-gram in the analyzed code of different programmers.
 
 Step 7:
+### matrices_representation.py
 // Data Structure: Carefully choose the appropriate data structure 
 // to represent these matrices for efficient storage and comparison.
 
 Step 8:
+### degree_of_similarity.py
 // Comparison: Implement a function to compare the N-gram frequency matrices of different programmers14. 
 // This will establish the degree of similarity in their programming styles4.
 
