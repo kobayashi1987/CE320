@@ -37,7 +37,7 @@ Step 5:
 // as large codebases might produce a significant number of N-grams.
 
 Step 6:
-### matrix_creation.py
+### frequency_matrices.py
 // Matrix Creation: Generate frequency matrices for 1-gram and 2-gram analysis. 
 // These matrices will represent the frequency of each N-gram in the analyzed code of different programmers.
 
