@@ -58,18 +58,27 @@ Step 8:
 
 Step 9:
 ### similarity_metric.py
-// Similarity Metric: Consider using appropriate similarity metrics (e.g., cosine similarity, Euclidean distance) 
-// for a numerical comparison of programming styles.
+Similarity Metric: Consider using appropriate similarity metrics
+(e.g., cosine similarity, Euclidean distance) for a numerical comparison of programming styles.
 
 Step 10:
-// Input files or folders containing Python code.
-// Output path for storing the analysis results.
+
+Input files or folders containing Python code.
+
+Output path for storing the analysis results.
 
 
 
 ## Phase Two:
 
 Data Analysis and Homogeneity:
-Pairwise Comparison: Your program will need to compare all pairs of programmers in a team to determine the similarity of their programming styles4.
-Homogeneity Determination: Develop a way to determine the degree of homogeneity within a team based on the pairwise comparisons3. For example, you can calculate the average or variance of similarity scores to assess team homogeneity34.
+
+Pairwise Comparison: 
+
+The program will need to compare all pairs of programmers in a team to determine the similarity of their programming styles.
+
+Homogeneity Determination: Develop a way to determine the degree of homogeneity within a team based on the pairwise comparisons.
+
+For example, you can calculate the average or variance of similarity scores to assess team homogeneity.
+
 Output: Provide clear and concise output on the similarity scores of each pair of programmers, as well as the overall team homogeneity score.
