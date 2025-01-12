@@ -62,9 +62,9 @@ Similarity Metric: Consider using appropriate similarity metrics
 (e.g., cosine similarity, Euclidean distance) for a numerical comparison of programming styles.
 
 Step 10:
-
-Input files or folders containing Python code.
-
+### code_analysis.py
+Input files folders containing different programmer's code.
+read the codes from the files and analyse them.
 Output path for storing the analysis results.
 
 
