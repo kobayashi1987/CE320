@@ -7,6 +7,7 @@ pip install matplotlib
 pip install scikit-learn
 pip install seaborn
 pip install scipy
+pip install customtkinter
 ```
 
 ## Phase One:
