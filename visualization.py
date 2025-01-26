@@ -1,6 +1,8 @@
 import os
 import seaborn as sns
 from matplotlib import pyplot as plt
+
+from clustering import cluster_programmers
 from logging_setup import logger
 from utils import validate_numeric_dataframe
 
@@ -16,8 +18,11 @@ def visualize_similarity_matrix(similarity_df, output_path, title="Similarity Ma
         cmap (str): Colormap to use for the heatmap.
         fmt (str): String formatting code.
     """
-    similarity_df = validate_numeric_dataframe(similarity_df, name="Similarity DataFrame")
-    save_plot(sns.heatmap(similarity_df, annot=True, fmt=fmt, cmap=cmap, square=True), output_path, title)
+
+    validate_numeric_dataframe(similarity_df, name="Similarity Matrix")
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(similarity_df, annot=True, fmt=fmt, cmap=cmap, square=True, cbar_kws={'shrink': 0.75})
+    save_plot(output_path, title)
 
 
 def visualize_clustering(clusters, output_path, title="Programmer Clusters"):
@@ -32,16 +37,9 @@ def visualize_clustering(clusters, output_path, title="Programmer Clusters"):
     plt.figure(figsize=(8, 6))
     sns.countplot(x=clusters)
     plt.title(title)
-    plt.xlabel('Cluster')
-    plt.ylabel('Number of Programmers')
-    plt.tight_layout()
-
-    # Save the clustering plot
-    clustering_filename = f"{title.replace(' ', '_').lower()}.png"
-    clustering_path = os.path.join(output_path, 'visualizations', clustering_filename)
-    plt.savefig(clustering_path)
-    plt.close()
-    logger.info(f"Saved clustering visualization: {clustering_filename}")
+    plt.xlabel("Cluster")
+    plt.ylabel("Number of Programmers")
+    save_plot(output_path, title)
 
 
 def visualize_frequency_matrix(freq_matrix, output_path, title="Frequency Matrix", top_n=20):
@@ -83,8 +81,44 @@ def visualize_frequency_matrix(freq_matrix, output_path, title="Frequency Matrix
     logger.info(f"Saved heatmap: {heatmap_filename}")
 
 
-def save_plot(fig, output_path, title):
-    filename = os.path.join(output_path, 'visualizations', f"{title.replace(' ', '_').lower()}.png")
-    fig.figure.savefig(filename)
-    plt.close(fig.figure)
-    logger.info(f"Saved plot: {filename}")
+def save_plot(output_path, title):
+    """
+    Saves the current matplotlib plot to the specified output path.
+
+    Parameters:
+        output_path (str): Path to save the plot.
+        title (str): Title of the plot.
+    """
+    plt.title(title, fontsize=14, pad=15)
+    plot_path = os.path.join(output_path, 'visualizations', f"{title.replace(' ', '_').lower()}.png")
+    plt.tight_layout()
+    plt.savefig(plot_path)
+    plt.close()
+    logger.info(f"Saved plot: {plot_path}")
+
+
+def save_and_visualize_metric(metric_func, frequency_data, name, programmers, output_path):
+    """
+    Computes a metric, saves it as CSV, and visualizes it using a heatmap.
+
+    Parameters:
+        metric_func (function): Function to compute the metric (e.g., cosine similarity).
+        frequency_data (dict): Contains sparse matrix and other frequency-related data.
+        name (str): Name of the metric (used for file naming and visualization title).
+        programmers (list): List of programmer identifiers.
+        output_path (str): Path to save the output.
+    """
+    sparse_matrix = frequency_data['unigram']['sparse_matrix'].transpose()  # Transpose if needed
+    df = metric_func(sparse_matrix, programmers)
+
+    csv_path = os.path.join(output_path, 'similarity_metrics', f'{name.lower().replace(" ", "_")}.csv')
+    df.to_csv(csv_path)
+    logger.info(f"Saved {name} as CSV.")
+
+    visualize_similarity_matrix(df, output_path, title=name)
+
+
+def cluster_and_visualize(sparse_matrix, programmers, output_path, n_clusters):
+    clusters = cluster_programmers(sparse_matrix, programmers, output_path, n_clusters=n_clusters)
+    visualize_clustering(clusters, output_path, title="Programmer Clusters (Unigrams)")
+    return clusters

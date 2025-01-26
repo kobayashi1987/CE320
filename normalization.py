@@ -17,7 +17,6 @@ def normalize_frequency_matrix(freq_matrix):
     if not isinstance(freq_matrix, pd.DataFrame):
         raise ValueError("Expected a Pandas DataFrame for normalization.")
 
-    # Normalize each column by its sum (Term Frequency normalization)
-    normalized = freq_matrix.div(freq_matrix.sum(axis=0), axis=1)
-    return normalized.fillna(0)  # Replace NaNs resulting from division by zero
+    # Normalize each column by its sum (Term Frequency normalization) and replace NaNs resulting from division by zero
+    return freq_matrix.div(freq_matrix.sum(axis=0), axis=1).fillna(0)
 
