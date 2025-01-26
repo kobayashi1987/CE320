@@ -73,7 +73,7 @@ def visualize_frequency_matrix(freq_matrix, output_path, title="Frequency Matrix
     plt.yticks(rotation=0)
     plt.tight_layout()
 
-    # Save the heatmap
+    # Save the heatmap with a unique filename
     heatmap_filename = f"{title.replace(' ', '_').lower()}.png"
     heatmap_path = os.path.join(output_path, 'visualizations', heatmap_filename)
     plt.savefig(heatmap_path)
@@ -90,6 +90,7 @@ def save_plot(output_path, title):
         title (str): Title of the plot.
     """
     plt.title(title, fontsize=14, pad=15)
+    plt.rcParams.update({'font.size': 14})  # Set a larger global font size
     plot_path = os.path.join(output_path, 'visualizations', f"{title.replace(' ', '_').lower()}.png")
     plt.tight_layout()
     plt.savefig(plot_path)

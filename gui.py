@@ -1,3 +1,4 @@
+import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import threading
@@ -12,79 +13,174 @@ from code_analysis import main as run_analysis
 
 class NailerGUI:
     def __init__(self, root):
+        """
+        Initializes the GUI for the NAILER: Code Analysis Tool.
+
+        Parameters:
+            root (CTk): The root window for the GUI.
+        """
+
+        # Set theme and appearance
+        ctk.set_appearance_mode("dark")  # Set dark mode
+        ctk.set_default_color_theme("blue")  # Set theme color
+
+        # Configure root window
         self.root = root
         self.root.title("NAILER: Code Analysis Tool")
+        self.root.geometry("1280x1100")
 
+        # Split the UI into left and right frames
+        self.left_frame = ctk.CTkFrame(root, width=400, height=600)
+        self.left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.left_frame.grid_propagate(False)  # Prevent resizing
+        self.left_frame.grid_columnconfigure(0, weight=1)
+
+        self.right_frame = ctk.CTkFrame(root, width=800, height=600, fg_color="gray15")
+        self.right_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.right_frame.grid_propagate(False)  # Prevent resizing
+        self.right_frame.grid_rowconfigure(0, weight=1)
+        self.right_frame.grid_columnconfigure(0, weight=1)
+
+        # Initialize the list to store generated plot paths
+        self.generated_plots = []
+
+        # -------------------- Left Frame Widgets --------------------
         # Input Directory
-        self.input_label = tk.Label(root, text="Input Directory:")
-        self.input_label.grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        self.input_entry = tk.Entry(root, width=40)
-        self.input_entry.grid(row=0, column=1, padx=10, pady=5)
-        self.input_browse = tk.Button(root, text="Browse", command=self.browse_input)
-        self.input_browse.grid(row=0, column=2, padx=10, pady=5)
+        self.input_label = ctk.CTkLabel(self.left_frame, text="Input Directory:")
+        self.input_label.pack(padx=10, pady=5, anchor="w")
+        self.input_entry = ctk.CTkEntry(self.left_frame, width=300, placeholder_text="Select input folder")
+        self.input_entry.pack(padx=10, pady=5)
+        self.input_browse = ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_input)
+        self.input_browse.pack(padx=10, pady=5)
 
         # Output Directory
-        self.output_label = tk.Label(root, text="Output Directory:")
-        self.output_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        self.output_entry = tk.Entry(root, width=40)
-        self.output_entry.grid(row=1, column=1, padx=10, pady=5)
-        self.output_browse = tk.Button(root, text="Browse", command=self.browse_output)
-        self.output_browse.grid(row=1, column=2, padx=10, pady=5)
+        self.output_label = ctk.CTkLabel(self.left_frame, text="Output Directory:")
+        self.output_label.pack(padx=10, pady=5, anchor="w")
+        self.output_entry = ctk.CTkEntry(self.left_frame, width=300, placeholder_text="Select output folder")
+        self.output_entry.pack(padx=10, pady=5)
+        self.output_browse = ctk.CTkButton(self.left_frame, text="Browse", command=self.browse_output)
+        self.output_browse.pack(padx=10, pady=5)
 
         # Metrics Options
-        self.metrics_label = tk.Label(root, text="Metrics:")
-        self.metrics_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        self.metrics_var = tk.StringVar(value="cosine euclidean")
-        self.metrics_entry = tk.Entry(root, width=40, textvariable=self.metrics_var)
-        self.metrics_entry.grid(row=2, column=1, padx=10, pady=5)
+        self.metrics_label = ctk.CTkLabel(self.left_frame, text="Metrics:")
+        self.metrics_label.pack(padx=10, pady=10, anchor="w")
+        self.metrics_vars = {
+            "Cosine": ctk.StringVar(value="1"),
+            "Euclidean": ctk.StringVar(value="1"),
+            "Pearson": ctk.StringVar(value="0"),
+            "Jaccard": ctk.StringVar(value="0"),
+        }
+        for metric, var in self.metrics_vars.items():
+            checkbox = ctk.CTkCheckBox(self.left_frame, text=metric, variable=var, onvalue="1", offvalue="0")
+            checkbox.pack(padx=20, pady=5, anchor="w")
 
         # Clustering Options
-        self.clusters_label = tk.Label(root, text="Number of Clusters:")
-        self.clusters_label.grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        self.clusters_var = tk.IntVar(value=2)
-        self.clusters_spinbox = tk.Spinbox(root, from_=1, to=10, textvariable=self.clusters_var, width=5)
-        self.clusters_spinbox.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+        self.clusters_var = ctk.IntVar(value=2)
+        # Label to display the current value of the slider
+        self.clusters_value_label = ctk.CTkLabel(self.left_frame, text=f"Number of Clusters: {self.clusters_var.get()}")
+        self.clusters_value_label.pack(padx=10, pady=5, anchor="w")
+        # Slider for selecting the number of clusters
+        self.clusters_spinbox = ctk.CTkSlider(
+            self.left_frame,
+            from_=2,
+            to=10,
+            number_of_steps=9,
+            variable=self.clusters_var,
+            command=self.update_cluster_label,  # Bind slider updates to update label dynamically
+        )
+        self.clusters_spinbox.pack(padx=20, pady=10)
 
-        # Start Button
-        self.start_button = tk.Button(root, text="Start Analysis", command=self.start_analysis)
-        self.start_button.grid(row=4, column=0, columnspan=3, pady=10)
+        # Start and Clear Buttons
+        self.start_button = ctk.CTkButton(self.left_frame, text="Start Analysis", command=self.start_analysis,
+                                          width=150)
+        self.start_button.pack(padx=10, pady=20)
+        self.clear_button = ctk.CTkButton(self.left_frame, text="Clear Fields", command=self.clear_fields, width=150)
+        self.clear_button.pack(padx=10, pady=10)
 
         # Status Display
-        self.status_text = tk.Text(root, height=10, width=60, state="disabled")
-        self.status_text.grid(row=5, column=0, columnspan=3, padx=10, pady=10)
+        self.status_text = ctk.CTkTextbox(self.left_frame, height=150, width=300)
+        self.status_text.pack(padx=10, pady=10)
 
-        # List of Plots
-        self.plot_list_label = tk.Label(root, text="Generated Plots:")
-        self.plot_list_label.grid(row=6, column=0, padx=10, pady=5, sticky="w")
-        self.plot_listbox = tk.Listbox(root, height=5, width=40)
-        self.plot_listbox.grid(row=6, column=1, padx=10, pady=5, sticky="w")
-        self.view_button = tk.Button(root, text="View Plot", command=self.view_selected_plot)
-        self.view_button.grid(row=6, column=2, padx=10, pady=5)
+        # Generated Plots
+        self.plot_list_label = ctk.CTkLabel(self.left_frame, text="Generated Plots:")
+        self.plot_list_label.pack(padx=10, pady=5, anchor="w")
+        self.plot_list_frame = ctk.CTkScrollableFrame(self.left_frame, width=300, height=150)
+        self.plot_list_frame.pack(padx=10, pady=10)
 
-        self.generated_plots = []  # List to store generated plot file paths
-
-        # Plot Display Area
-        self.plot_frame = tk.Frame(root, borderwidth=2, relief="sunken", width=600, height=400)
-        self.plot_frame.grid(row=7, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
-        self.plot_canvas = None  # Will hold the current plot
+        # -------------------- Right Frame Widgets --------------------
+        self.plot_canvas = None  # Will hold the current plot display
+        self.plot_display_frame = ctk.CTkFrame(self.right_frame, width=780, height=580, fg_color="gray15")
+        self.plot_display_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
     def browse_input(self):
+        """
+        Opens a directory browser dialog to select the input directory.
+        """
+
         directory = filedialog.askdirectory(title="Select Input Directory")
         if directory:
             self.input_entry.delete(0, tk.END)
             self.input_entry.insert(0, directory)
 
     def browse_output(self):
+        """
+        Opens a directory browser dialog to select the output directory.
+        """
         directory = filedialog.askdirectory(title="Select Output Directory")
         if directory:
             self.output_entry.delete(0, tk.END)
             self.output_entry.insert(0, directory)
 
-    def update_status(self, message):
-        self.status_text.config(state="normal")
+    def update_cluster_label(self, value):
+        """
+        Updates the label displaying the current number of clusters.
+        """
+        self.clusters_value_label.configure(text=f"Number of Clusters: {int(float(value))}")
+
+    def update_status(self, message, clear=False):
+        """
+        Updates the status text area with a message.
+
+        Parameters:
+            message (str): The message to display.
+            clear (bool): Whether to clear the existing messages before adding the new one.
+        """
+
+        if clear:
+            self.status_text.configure(state="normal")
+            self.status_text.delete(1.0, tk.END)
+
+        self.status_text.configure(state="normal")
         self.status_text.insert(tk.END, message + "\n")
-        self.status_text.config(state="disabled")
+        self.status_text.configure(state="disabled")
         self.status_text.see(tk.END)
+
+    def clear_fields(self):
+        """
+        Clears all input fields, resets the metrics and clustering slider,
+        and clears the status and plot list.
+        """
+        # Clear input and output fields
+        self.input_entry.delete(0, tk.END)
+        self.output_entry.delete(0, tk.END)
+
+        # Reset metrics checkboxes to default
+        for var in self.metrics_vars.values():
+            var.set("0")
+        self.metrics_vars["Cosine"].set("1")
+        self.metrics_vars["Euclidean"].set("1")
+
+        # Reset clustering slider to default
+        self.clusters_var.set(2)
+        self.update_cluster_label(self.clusters_var.get())  # Update the cluster label
+
+        # Clear the generated plots list and plot buttons
+        self.generated_plots = []
+        for widget in self.plot_list_frame.winfo_children():  # Clear all widgets in the scrollable frame
+            widget.destroy()
+
+        # Clear the status text
+        self.update_status("", clear=True)
 
     def display_plot(self, plot_path):
         """
@@ -92,38 +188,34 @@ class NailerGUI:
         Parameters:
             plot_path (str): Path to the plot image file.
         """
-        # Clear the existing plot
+        # Clear existing plot
         if self.plot_canvas:
             self.plot_canvas.get_tk_widget().destroy()
 
-        # Load the image and embed it into the GUI
-        fig = Figure(figsize=(5, 4))
+        # Create a new matplotlib figure
+        fig = Figure(figsize=(8, 6))
         ax = fig.add_subplot(111)
         img = mpimg.imread(plot_path)
         ax.imshow(img)
-        ax.axis("off")  # Remove axis for cleaner display
+        ax.axis("off")  # Hide the axis for cleaner display
 
-        self.plot_canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+        # Embed the plot in the plot display frame
+        self.plot_canvas = FigureCanvasTkAgg(fig, master=self.plot_display_frame)
         self.plot_canvas.draw()
         self.plot_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-    def view_selected_plot(self):
-        """
-        Loads the selected plot and displays it in the GUI.
-        """
-        selected_index = self.plot_listbox.curselection()
-        if selected_index:
-            plot_path = self.generated_plots[selected_index[0]]
-            self.display_plot(plot_path)
-        else:
-            messagebox.showwarning("No Selection", "Please select a plot to view.")
-
     def start_analysis(self):
+        """
+          Starts the analysis process in a separate thread.
+          Validates inputs, disables the Start button, and runs the analysis function.
+        """
+
         input_dir = self.input_entry.get()
         output_dir = self.output_entry.get()
-        metrics = self.metrics_var.get().split()
+        metrics = [metric for metric, var in self.metrics_vars.items() if var.get() == "1"]
         clusters = self.clusters_var.get()
 
+        # Validate path inputs
         if not os.path.isdir(input_dir):
             messagebox.showerror("Error", "Invalid input directory.")
             return
@@ -132,34 +224,53 @@ class NailerGUI:
             return
 
         # Disable the start button during processing
-        self.start_button.config(state="disabled")
-        self.update_status("Starting analysis...")
+        self.start_button.configure(state="disabled")
+        self.update_status(f"Starting analysis with metrics: {', '.join(metrics)} and {clusters} clusters...",
+                           clear=True)
 
         # Run analysis in a separate thread to keep the GUI responsive
         def analysis_thread():
             try:
                 # Run the analysis
-                run_analysis(input=input_dir, output=output_dir, metrics=metrics, clusters=clusters)
+                run_analysis(input_dir=input_dir, output_dir=output_dir, metrics=metrics, clusters=clusters)
                 self.update_status("Analysis completed successfully.")
 
                 # Populate the plot list with generated plot paths
-                plot_dir = os.path.join(output_dir, "visualizations")
-                for plot_file in os.listdir(plot_dir):
-                    plot_path = os.path.join(plot_dir, plot_file)
-                    self.generated_plots.append(plot_path)
-                    self.plot_listbox.insert(tk.END, os.path.basename(plot_file))
+                self.generated_plots = []  # Reset the generated plots
+                for widget in self.plot_list_frame.winfo_children():  # Clear existing buttons
+                    widget.destroy()
 
-                messagebox.showinfo("Success", "Analysis completed successfully!")
+                plot_dir = os.path.join(output_dir, "visualizations")
+                if os.path.exists(plot_dir):  # Check if the directory exists
+                    for plot_file in os.listdir(plot_dir):
+                        plot_path = os.path.join(plot_dir, plot_file)
+                        self.generated_plots.append(plot_path)
+
+                        # Create a button for each plot
+                        button = ctk.CTkButton(
+                            self.plot_list_frame,
+                            text=os.path.basename(plot_file),
+                            width=360,
+                            command=lambda p=plot_path: self.display_plot(p),
+                        )
+                        button.pack(pady=2)
+
+                if not self.generated_plots:
+                    self.update_status("No plots generated.")
+                    messagebox.showinfo("No Plots", "No plots were generated during analysis.")
+                else:
+                    self.update_status("Plots have been successfully loaded into the GUI.")
+
             except Exception as e:
                 self.update_status(f"Error: {str(e)}")
                 messagebox.showerror("Error", str(e))
             finally:
-                self.start_button.config(state="normal")
+                self.start_button.configure(state="normal")
 
         threading.Thread(target=analysis_thread).start()
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = ctk.CTk()
     app = NailerGUI(root)
     root.mainloop()
