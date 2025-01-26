@@ -57,26 +57,29 @@ def validate_numeric_dataframe(df, name="DataFrame"):
 
 
 # File Processing Utilities
-def process_programmer_data(input_path):
+def process_programmer_data(input_path, ngram_value):
     """
     Reads and processes code files in the input directory for each programmer.
 
     Parameters:
         input_path (str): Path to the input directory.
+        ngram_value (int): The N-gram value to process (e.g., 1 for unigrams, 2 for bigrams).
 
     Returns:
-        tuple: (list of programmers, unigram frequencies, bigram frequencies)
+        tuple: (list of programmers, N-gram frequencies)
     """
-    programmers, unigram_freqs, bigram_freqs = [], {}, {}
+    programmers = []
+    ngram_freqs = {}
+
     for programmer_dir in os.listdir(input_path):
         programmer_path = os.path.join(input_path, programmer_dir)
         if os.path.isdir(programmer_path):
             programmers.append(programmer_dir)
             code_combined = read_code_files(programmer_path)
             generator = NGramGenerator(code_combined)
-            unigram_freqs[programmer_dir] = generator.count_ngram_frequencies(n=1)
-            bigram_freqs[programmer_dir] = generator.count_ngram_frequencies(n=2)
-    return programmers, unigram_freqs, bigram_freqs
+            ngram_freqs[programmer_dir] = generator.count_ngram_frequencies(n=ngram_value)
+
+    return programmers, ngram_freqs
 
 
 def read_code_files(directory):
@@ -98,52 +101,39 @@ def read_code_files(directory):
 
 
 # Frequency Matrix Utilities
-def create_frequency_matrices(unigram_freqs, bigram_freqs, programmers, output_path):
+def create_frequency_matrices(ngram_freqs, programmers, output_path, ngram_value):
     """
-    Creates unigram and bigram frequency matrices and saves them as CSV files.
+    Creates N-gram frequency matrices and saves them as CSV files.
 
     Parameters:
-        unigram_freqs (dict): Dictionary mapping programmers to their unigram frequency Counters.
-        bigram_freqs (dict): Dictionary mapping programmers to their bigram frequency Counters.
+        ngram_freqs (dict): Dictionary mapping programmers to their N-gram frequency Counters.
         programmers (list): List of programmer identifiers.
         output_path (str): Path to save the frequency matrices.
+        ngram_value (int): The N-gram value (e.g., 1 for unigrams, 2 for bigrams, etc.).
 
     Returns:
-        dict: Contains unigram and bigram frequency matrices and their sparse representations.
+        dict: Contains the N-gram frequency matrix and its sparse representation.
     """
+    # Generate the N-gram frequency matrix
+    ngram_matrix = _generate_frequency_matrix(ngram_freqs, programmers, f"{ngram_value}-gram")
 
-    unigram_matrix = _generate_frequency_matrix(unigram_freqs, programmers, "Unigram")
-    bigram_matrix = _generate_frequency_matrix(bigram_freqs, programmers, "Bigram")
+    # Convert to sparse matrix
+    ngram_sparse = convert_to_sparse_matrix(ngram_matrix)
 
-    # Filter matrices to ensure columns match the programmers list
-    unigram_matrix = unigram_matrix.loc[:, programmers]
-    bigram_matrix = bigram_matrix.loc[:, programmers]
-
-    # Convert to sparse matrices
-    unigram_sparse = convert_to_sparse_matrix(unigram_matrix)
-    bigram_sparse = convert_to_sparse_matrix(bigram_matrix)
-
-    # Save frequency matrices as CSV
-    frequency_dir = os.path.join(output_path, 'frequency_matrices')
+    # Save the frequency matrix as a CSV
+    frequency_dir = os.path.join(output_path, "frequency_matrices")
     os.makedirs(frequency_dir, exist_ok=True)
-    unigram_matrix.to_csv(os.path.join(frequency_dir, 'unigram_frequency_matrix.csv'))
-    bigram_matrix.to_csv(os.path.join(frequency_dir, 'bigram_frequency_matrix.csv'))
-    logger.info("Saved frequency matrices as CSV files.")
+    csv_path = os.path.join(frequency_dir, f"{ngram_value}-gram_frequency_matrix.csv")
+    ngram_matrix.to_csv(csv_path)
+    logger.info(f"Saved {ngram_value}-gram frequency matrix as CSV.")
 
     return {
-        'unigram': {
-            'matrix': unigram_matrix,
-            'sparse_matrix': unigram_sparse,
-            'ngram_to_index': create_mappings(unigram_matrix)[0],
-            'programmer_to_index': create_mappings(unigram_matrix)[1],
-        },
-        'bigram': {
-            'matrix': bigram_matrix,
-            'sparse_matrix': bigram_sparse,
-            'ngram_to_index': create_mappings(bigram_matrix)[0],
-            'programmer_to_index': create_mappings(bigram_matrix)[1],
-        }
+        'matrix': ngram_matrix,
+        'sparse_matrix': ngram_sparse,
+        'ngram_to_index': create_mappings(ngram_matrix)[0],
+        'programmer_to_index': create_mappings(ngram_matrix)[1],
     }
+
 
 
 def _generate_frequency_matrix(frequencies, programmers, name):

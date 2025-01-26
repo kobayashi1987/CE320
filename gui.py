@@ -8,7 +8,7 @@ from matplotlib import image as mpimg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from code_analysis import main as run_analysis
+from code_analysis import main
 
 
 class NailerGUI:
@@ -74,6 +74,20 @@ class NailerGUI:
             checkbox = ctk.CTkCheckBox(self.left_frame, text=metric, variable=var, onvalue="1", offvalue="0")
             checkbox.pack(padx=20, pady=5, anchor="w")
 
+        # N-Gram Selection
+        self.ngram_var = ctk.IntVar(value=2)
+        self.ngram_value_label = ctk.CTkLabel(self.left_frame, text=f"N-gram Value: {self.ngram_var.get()}")
+        self.ngram_value_label.pack(padx=10, pady=5, anchor="w")
+        self.ngram_slider = ctk.CTkSlider(
+            self.left_frame,
+            from_=2,
+            to=10,
+            number_of_steps=8,
+            variable=self.ngram_var,
+            command=self.update_ngram_label,  # Update label dynamically
+        )
+        self.ngram_slider.pack(padx=20, pady=10)
+
         # Clustering Options
         self.clusters_var = ctk.IntVar(value=2)
         # Label to display the current value of the slider
@@ -84,7 +98,7 @@ class NailerGUI:
             self.left_frame,
             from_=2,
             to=10,
-            number_of_steps=9,
+            number_of_steps=8,
             variable=self.clusters_var,
             command=self.update_cluster_label,  # Bind slider updates to update label dynamically
         )
@@ -135,7 +149,13 @@ class NailerGUI:
         """
         Updates the label displaying the current number of clusters.
         """
-        self.clusters_value_label.configure(text=f"Number of Clusters: {int(float(value))}")
+        self.clusters_value_label.configure(text=f"Number of Clusters: {int(value)}")
+
+    def update_ngram_label(self, value):
+        """
+        Updates the label displaying the current N-gram value.
+        """
+        self.ngram_value_label.configure(text=f"N-gram Value: {int(value)}")
 
     def update_status(self, message, clear=False):
         """
@@ -206,16 +226,16 @@ class NailerGUI:
 
     def start_analysis(self):
         """
-          Starts the analysis process in a separate thread.
-          Validates inputs, disables the Start button, and runs the analysis function.
+        Starts the analysis process in a separate thread.
+        Validates inputs, disables the Start button, and runs the analysis function.
         """
-
         input_dir = self.input_entry.get()
         output_dir = self.output_entry.get()
         metrics = [metric for metric, var in self.metrics_vars.items() if var.get() == "1"]
+        ngram_value = self.ngram_var.get()
         clusters = self.clusters_var.get()
 
-        # Validate path inputs
+        # Validate input and output directories
         if not os.path.isdir(input_dir):
             messagebox.showerror("Error", "Invalid input directory.")
             return
@@ -223,16 +243,20 @@ class NailerGUI:
             messagebox.showerror("Error", "Invalid output directory.")
             return
 
-        # Disable the start button during processing
+        # Disable the start button to prevent multiple clicks during processing
         self.start_button.configure(state="disabled")
-        self.update_status(f"Starting analysis with metrics: {', '.join(metrics)} and {clusters} clusters...",
-                           clear=True)
+        self.update_status(
+            f"Starting analysis with N={ngram_value}-grams, metrics: {', '.join(metrics)}, and {clusters} clusters...",
+            clear=True)
 
-        # Run analysis in a separate thread to keep the GUI responsive
+        # Run the analysis in a separate thread to keep the GUI responsive
         def analysis_thread():
             try:
-                # Run the analysis
-                run_analysis(input_dir=input_dir, output_dir=output_dir, metrics=metrics, clusters=clusters)
+                # Call the main analysis function
+                main(input_dir=input_dir, output_dir=output_dir, metrics=metrics, clusters=clusters,
+                     ngram_value=ngram_value)
+
+                # Update the status area to indicate success
                 self.update_status("Analysis completed successfully.")
 
                 # Populate the plot list with generated plot paths
@@ -241,7 +265,7 @@ class NailerGUI:
                     widget.destroy()
 
                 plot_dir = os.path.join(output_dir, "visualizations")
-                if os.path.exists(plot_dir):  # Check if the directory exists
+                if os.path.exists(plot_dir):  # Check if the visualization directory exists
                     for plot_file in os.listdir(plot_dir):
                         plot_path = os.path.join(plot_dir, plot_file)
                         self.generated_plots.append(plot_path)
@@ -255,6 +279,7 @@ class NailerGUI:
                         )
                         button.pack(pady=2)
 
+                # Check if plots were generated
                 if not self.generated_plots:
                     self.update_status("No plots generated.")
                     messagebox.showinfo("No Plots", "No plots were generated during analysis.")
@@ -262,11 +287,14 @@ class NailerGUI:
                     self.update_status("Plots have been successfully loaded into the GUI.")
 
             except Exception as e:
+                # Handle exceptions and display error messages
                 self.update_status(f"Error: {str(e)}")
                 messagebox.showerror("Error", str(e))
             finally:
+                # Re-enable the Start button
                 self.start_button.configure(state="normal")
 
+        # Start the thread
         threading.Thread(target=analysis_thread).start()
 
 

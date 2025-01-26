@@ -65,7 +65,7 @@ def visualize_frequency_matrix(freq_matrix, output_path, title="Frequency Matrix
 
     # Plot heatmap
     plt.figure(figsize=(12, 8))
-    sns.heatmap(top_freq_matrix, annot=True, fmt='d', cmap='Blues')
+    sns.heatmap(top_freq_matrix, annot=True, fmt='.0f', cmap='Blues')
     plt.title(title)
     plt.xlabel('Programmers')
     plt.ylabel('N-grams')
@@ -98,7 +98,7 @@ def save_plot(output_path, title):
     logger.info(f"Saved plot: {plot_path}")
 
 
-def save_and_visualize_metric(metric_func, frequency_data, name, programmers, output_path):
+def save_and_visualize_metric(metric_func, frequency_data, name, programmers, output_path, ngram_value):
     """
     Computes a metric, saves it as CSV, and visualizes it using a heatmap.
 
@@ -108,8 +108,11 @@ def save_and_visualize_metric(metric_func, frequency_data, name, programmers, ou
         name (str): Name of the metric (used for file naming and visualization title).
         programmers (list): List of programmer identifiers.
         output_path (str): Path to save the output.
+        ngram_value (int): The N-gram value used in the analysis.
     """
-    sparse_matrix = frequency_data['unigram']['sparse_matrix'].transpose()  # Transpose if needed
+    ngram_key = f"{ngram_value}-gram"  # Dynamic key based on N-gram value
+
+    sparse_matrix = frequency_data['sparse_matrix'].transpose()  # Transpose if needed
     df = metric_func(sparse_matrix, programmers)
 
     csv_path = os.path.join(output_path, 'similarity_metrics', f'{name.lower().replace(" ", "_")}.csv')
@@ -117,6 +120,7 @@ def save_and_visualize_metric(metric_func, frequency_data, name, programmers, ou
     logger.info(f"Saved {name} as CSV.")
 
     visualize_similarity_matrix(df, output_path, title=name)
+
 
 
 def cluster_and_visualize(sparse_matrix, programmers, output_path, n_clusters):
