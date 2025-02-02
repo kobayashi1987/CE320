@@ -7,6 +7,7 @@ pip install matplotlib
 pip install scikit-learn
 pip install seaborn
 pip install scipy
+pip install customtkinter
 ```
 
 ## Phase One:
@@ -73,12 +74,32 @@ Output path for storing the analysis results.
 
 Data Analysis and Homogeneity:
 
-Pairwise Comparison: 
-
+Step 1:
+## pairwise_comparison.py
+Pairwise Comparison:
 The program will need to compare all pairs of programmers in a team to determine the similarity of their programming styles.
 
-Homogeneity Determination: Develop a way to determine the degree of homogeneity within a team based on the pairwise comparisons.
+## how to run:
+```bash
+python3 pairwise_comparison.py
+```
 
+
+Step 2:
+## homogeneity_determination.py
+Homogeneity Determination: Develop a way to determine the degree of homogeneity within a team based on the pairwise comparisons.
 For example, you can calculate the average or variance of similarity scores to assess team homogeneity.
 
+## how to run:
+```bash
+python3 homogeneity_determination.py -i ./input/pairwise_comparison.csv -o ./output/
+```
+
+Step 3:
+## homogeneity_output.py
 Output: Provide clear and concise output on the similarity scores of each pair of programmers, as well as the overall team homogeneity score.
+
+## how to run:
+```bash
+python3 homogeneity_output.py -p ./input/pairwise_comparison.csv -m ./input/homogeneity_metrics.csv -o ./output/
+```
